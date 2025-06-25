@@ -1,62 +1,42 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const dataList = document.getElementById('data-list');
-    const addDataForm = document.getElementById('add-data-form');
-    const value1Input = document.getElementById('value1');
-    const value2Input = document.getElementById('value2');
+document.getElementById('kakeibo-form').addEventListener('submit', function(e) {
+    e.preventDefault();
 
-    // データ一覧を取得して表示する関数
-    async function fetchData() {
-        try {
-            const response = await fetch('/data');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            dataList.innerHTML = ''; // 既存のリストをクリア
-            data.forEach(item => {
-                const listItem = document.createElement('li');
-                listItem.textContent = `ID: ${item.id}, 値1: ${item.value_1}, 値2: ${item.value_2 || 'N/A'}`;
-                dataList.appendChild(listItem);
-            });
-        } catch (error) {
-            console.error('データの取得に失敗しました:', error);
-            dataList.innerHTML = '<li>データの取得に失敗しました。</li>';
+    // 入力値取得
+    const date = document.getElementById('date').value;
+    const category = document.getElementById('category').value;
+    const amount = Number(document.getElementById('amount').value);
+    const type = document.querySelector('input[name="type"]:checked').value;
+
+    // テーブルに追加
+    const table = document.getElementById('records-table').getElementsByTagName('tbody')[0];
+    const row = table.insertRow();
+    row.insertCell(0).textContent = date;
+    row.insertCell(1).textContent = category;
+    row.insertCell(2).textContent = amount;
+    row.insertCell(3).textContent = type === 'income' ? '収入' : '支出';
+
+    // 合計計算
+    updateTotals();
+
+    // フォームリセット
+    this.reset();
+});
+
+// 合計計算関数
+function updateTotals() {
+    let totalIncome = 0;
+    let totalExpense = 0;
+    const rows = document.getElementById('records-table').getElementsByTagName('tbody')[0].rows;
+    for (let i = 0; i < rows.length; i++) {
+        const amount = Number(rows[i].cells[2].textContent);
+        const type = rows[i].cells[3].textContent;
+        if (type === '収入') {
+            totalIncome += amount;
+        } else {
+            totalExpense += amount;
         }
     }
-
-    // データ追加フォームの送信イベントリスナー
-    addDataForm.addEventListener('submit', async (event) => {
-        event.preventDefault(); // デフォルトのフォーム送信をキャンセル
-
-        const value1 = value1Input.value;
-        const value2 = value2Input.value;
-
-        try {
-            const response = await fetch('/data', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ value_1: value1, value_2: value2 }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            // フォームをクリア
-            value1Input.value = '';
-            value2Input.value = '';
-
-            // データ一覧を再読み込み
-            await fetchData();
-
-        } catch (error) {
-            console.error('データの追加に失敗しました:', error);
-            alert('データの追加に失敗しました。');
-        }
-    });
-
-    // 初期データの読み込み
-    fetchData();
-});
+    document.getElementById('total-income').textContent = totalIncome;
+    document.getElementById('total-expense').textContent = totalExpense;
+    document.getElementById('balance').textContent = totalIncome - totalExpense;
+}
