@@ -28,12 +28,32 @@ function renderTable() {
     tbody.innerHTML = '';
     const month = document.getElementById('month-select').value;
     const filtered = records.filter(r => r.date.startsWith(month));
-    filtered.forEach(r => {
+    filtered.forEach((r, idx) => {
         const row = tbody.insertRow();
         row.insertCell(0).textContent = r.date;
         row.insertCell(1).textContent = r.category;
         row.insertCell(2).textContent = r.amount;
         row.insertCell(3).textContent = r.type === 'income' ? '収入' : '支出';
+        // 削除ボタン
+        const delCell = row.insertCell(4);
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '削除';
+        delBtn.addEventListener('click', () => {
+            // 削除対象のインデックスを特定
+            const globalIdx = records.findIndex(
+                rec => rec.date === r.date &&
+                       rec.category === r.category &&
+                       rec.amount === r.amount &&
+                       rec.type === r.type
+            );
+            if (globalIdx !== -1) {
+                records.splice(globalIdx, 1);
+                localStorage.setItem('kakeiboRecords', JSON.stringify(records));
+                updateMonthSelect();
+                renderTable();
+            }
+        });
+        delCell.appendChild(delBtn);
     });
     updateTotals(filtered);
 }
